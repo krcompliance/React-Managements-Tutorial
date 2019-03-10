@@ -1,3 +1,6 @@
+# Management System
+ This is a management system to learn a react programming.
+ 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
 ## Available Scripts
