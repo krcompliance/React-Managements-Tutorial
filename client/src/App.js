@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import './App.css';
 import Customer from './components/Customer';
+import CustomerAdd from './components/CustomerAdd';
 import Paper from '@material-ui/core/Paper';
 import Table from '@material-ui/core/Table';
 import TableHead from '@material-ui/core/TableHead';
@@ -8,6 +9,8 @@ import TableBody from '@material-ui/core/TableBody';
 import TableRow from '@material-ui/core/TableRow';
 import TableCell from '@material-ui/core/TableCell';
 import { withStyles} from '@material-ui/core/styles';
+import CircularProgress from '@material-ui/core/CircularProgress';
+import PropTypes from 'prop-types';
 
 const styles = theme => ({
   root: {
@@ -17,57 +20,89 @@ const styles = theme => ({
   },
   table: {
     minWidth: 1080
+  },
+  progress: {
+    margin: theme.spacing.unit * 2,
   }
 })
-const customers = [
-  {
-    'id': 1,
-    'image': 'https://placeimg.com/64/64/1',
-    'name': 'Edward',
-    'birthday': '999999',
-    'gender': 'Male',
-    'job': 'Programmer'
-  },
-  {
-    'id': 2,
-    'image': 'https://placeimg.com/64/64/2',
-    'name': 'Tony',
-    'birthday': '888888',
-    'gender': 'Male',
-    'job': 'Architect'
-  },
-  {
-    'id': 3,
-    'image': 'https://placeimg.com/64/64/3',
-    'name': 'Kang',
-    'birthday': '777777',
-    'gender': 'Female',
-    'job': 'HouseKeeper'
-  }
-]
+
 class App extends Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      customers: '',
+      completed: 0
+    }    
+  }
+
+  // Refresh the browser in order to check the result from the action
+  stateRefresh = () => {
+    this.callApi()
+    .then(res => this.setState({customers: res}))
+    .catch(err => {console.log(err)})
+  }
+
+  componentDidMount(){
+    this.timer = setInterval(this.progress, 20);
+
+    // 
+    this.callApi()
+    .then(res => this.setState({customers: res}))
+    .catch(err => console.log(err));
+  }
+
+  // REST API : get, fetch
+  callApi = async () => {
+    const response = await fetch('api/customers');
+    const body = await response.json();
+    console.log("callApi response from fetch function(REST API: GET) = [ " + response + " ]");
+    
+    return body;
+  }
+
+  progress = () => {
+    const { completed } = this.state;
+    this.setState({completed : completed >= 100 ? 0 : completed + 1});
+  }
+
+  componentWillUnmount() {
+    clearInterval(this.timer);
+  }
   
   render() {
     const { classes } = this.props;
 
     return (
-      <Paper className={classes.root}>
-        <Table className={classes.table}>
-          <TableHead>
-            <TableRow>
-              <TableCell>ID</TableCell>
-              <TableCell>Image</TableCell>
-              <TableCell>Name</TableCell>
-              <TableCell>Birthday</TableCell>
-              <TableCell>Gender</TableCell>
-              <TableCell>Job</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-              { customers.map(c => { return (<Customer key={c.id} id={c.id} name={c.name} image={c.image} birthday={c.birthday} gender={c.gender} job={c.job}/> )})}                        
-          </TableBody>
-        </Table>
-      </Paper>  
+      <div>
+        <Paper className={classes.root}>
+          <Table className={classes.table}>
+            <TableHead>
+              <TableRow>
+                <TableCell>ID</TableCell>
+                <TableCell>Image</TableCell>
+                <TableCell>Name</TableCell>
+                <TableCell>Birthday</TableCell>
+                <TableCell>Gender</TableCell>
+                <TableCell>Job</TableCell>
+                <TableCell>Delete</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+                { this.state.customers ? this.state.customers.map(c => 
+                    { return (<Customer stateRefresh={this.stateRefresh} key={c.id} id={c.id} name={c.name} image={c.image} birthday={c.birthday} gender={c.gender} job={c.job}/> )})
+                    : 
+                    <TableRow>
+                      <TableCell colSpan = "6" align="center"> 
+                          <CircularProgress className={classes.progress} variant="determinate" value={this.state.completed}>
+                          </CircularProgress>  
+                      </TableCell>
+                  </TableRow>
+                }
+            </TableBody>
+          </Table>
+        </Paper>  
+        <CustomerAdd stateRefresh={this.stateRefresh}/>
+      </div>
     );
   }
 }
